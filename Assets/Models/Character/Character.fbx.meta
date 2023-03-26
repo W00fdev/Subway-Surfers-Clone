@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 6a72a39b0d5ee7e47a01922a2a8673fb
 ModelImporter:
-  serializedVersion: 19300
+  serializedVersion: 21300
   internalIDToNameTable:
   - first:
       74: 6200578666267062213
@@ -192,7 +192,72 @@ ModelImporter:
   - first:
       74: 2749528720828629341
     second: load
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: EFX
+    second: {fileID: 2100000, guid: 4890cf5784a87d14ea8d353dbedfeaf0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_frank
+    second: {fileID: 2100000, guid: 75065cdefbac990419f76f94155f0d4a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_fresh
+    second: {fileID: 2100000, guid: 1287bde7d0c38f74d91331a12e0a5209, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_frizzy
+    second: {fileID: 2100000, guid: 776d9ad9d17228e4695f62396cbf4c26, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_king
+    second: {fileID: 2100000, guid: d9c65d99fa6e9bb4e85c6e90f7e638a6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_lucy
+    second: {fileID: 2100000, guid: bcde9159a9b7b924f8d42b4a0d9cfdea, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_ninja
+    second: {fileID: 2100000, guid: 71aa641ff7b84fa439cc8a6ebd6d801c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_slick
+    second: {fileID: 2100000, guid: 45ae71f38c1f7f34991573416922b04f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_spike
+    second: {fileID: 2100000, guid: f638bba9a4a3ce340a70655a71e7c4b1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_tricky
+    second: {fileID: 2100000, guid: 42d90217c5eecfe4d8f83c69137940b4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: avatar_yutani
+    second: {fileID: 2100000, guid: 536ec2c5cbca8f845ab7aeb906f1b278, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: main
+    second: {fileID: 2100000, guid: 452779f8ec934ab4091b186e842c469e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shadow
+    second: {fileID: 2100000, guid: e6340cb2e91d0c34e99dfac71508f169, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0
@@ -203,6 +268,7 @@ ModelImporter:
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
     rigImportErrors: 
     rigImportWarnings: 
@@ -2389,20 +2455,27 @@ ModelImporter:
     importBlendShapes: 1
     importCameras: 1
     importLights: 1
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
     skinWeightsMode: 0
     maxBonesPerVertex: 4
     minBoneWeight: 0.001
+    optimizeBones: 1
     meshOptimizationFlags: -1
     indexFormat: 0
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 0
   tangentSpace:
@@ -2925,6 +2998,8 @@ ModelImporter:
   animationType: 3
   humanoidOversampling: 1
   avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

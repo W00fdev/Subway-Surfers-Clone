@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Subway.Player
@@ -55,6 +56,12 @@ namespace Subway.Player
         [SerializeField] private float _jumpForce;
         [SerializeField] private bool _isAlive;
 
+        [Header("Запоминание следующего слайда")]
+        [SerializeField] private bool _predictSlide;
+        [SerializeField] private float _predictSlideTime;
+
+        public AnimationCurve SlideCurve;
+
         [Header("Ускорение падения")]
         [SerializeField] private float _jumpVelocityFalloff;
         [SerializeField] private float _fallofMultiplier;
@@ -64,11 +71,11 @@ namespace Subway.Player
 
         [SerializeField] private Vector3 _velocity;
 
-        private int _previousHandledInput;
+        private int _predictedHandledInput;
 
         private int _currentLine = 0;
-        private float _slideT;
-        [SerializeField] private bool _isSliding;
+        private bool _isSliding;
+        private float _curvedT;
         private const int LineOffsetX = 2;
 
         private void Awake()
@@ -78,6 +85,11 @@ namespace Subway.Player
 
             // Указываем вектор скорости движения, z направление не меняем.
             _velocity = transform.forward * _speed;
+        }
+
+        private void FixedUpdate()
+        {
+            
         }
 
         private void Update()
@@ -90,13 +102,16 @@ namespace Subway.Player
             ApplyGravity();
             ProcessJump();
 
+
+            // Non-velocity based:
+            if (_isSliding == true)
+                _velocity.x = 0f;
+
             MovePlayer();
         }
 
-        private void MovePlayer()
-        {
-            _characterController.Move(_velocity * Time.deltaTime);
-        }
+        private void MovePlayer() 
+            => _characterController.Move(_velocity * Time.deltaTime);
 
         private void ProcessJump()
         {
@@ -111,51 +126,186 @@ namespace Subway.Player
 
         private void ApplyGravity()
         {
-            // Как отрефакторить эту страшилу?
-            if (_characterController.isGrounded == false)
-            {
-                var gravityPerFrame = _gravityForce * Time.deltaTime;
-
-                if (_velocity.y < _jumpVelocityFalloff)
-                    gravityPerFrame *= _fallofMultiplier;
-
-                _velocity.y += gravityPerFrame;
-            }
-            else
+            // Очевидно, здесь кривые работают по тому-же самому принципу
+            // Но не советую использовать, тк гравитация имеет аккумулятивный (накопительный эффект)
+            // А прыжок - реактивный (единоразовый). Тут добавлять кривую - плохая практика.
+            if (_characterController.isGrounded == true)
             {
                 _velocity.y = _gravityForce;
+                return;
             }
+
+            float gravityPerFrame = CalculateSmoothGravity();
+            _velocity.y += gravityPerFrame;
+        }
+
+        private float CalculateSmoothGravity()
+        {
+            var gravityPerFrame = _gravityForce * Time.deltaTime;
+            if (_velocity.y < _jumpVelocityFalloff)
+                gravityPerFrame *= _fallofMultiplier;
+
+            return gravityPerFrame;
         }
 
         private void ProcessSwipe()
         {
+            if (_isSliding == true && _predictSlide == false)
+                return;
+
+            int horizontalInput = (int)Input.GetAxisRaw("Horizontal");
+
+            if (_predictSlide == true && _curvedT >= _predictSlideTime)
+            {
+                if (_predictedHandledInput == 0 && horizontalInput != 0)
+                    _predictedHandledInput = horizontalInput;
+            }
+
             if (_isSliding == true)
                 return;
 
-            // Забавно, но на клавиатуре иногда работает smoothing
-            int horizontalInput = (int)Input.GetAxisRaw("Horizontal");
-
+            // Выбираем последнюю введенную клавишу. Если не вводили, то ту, что недавно кликали
+            // во время слайда.
+            var resultInput = horizontalInput;
             if (horizontalInput == 0)
-                return;
+                resultInput = _predictedHandledInput;
+            
+            _currentLine = Mathf.Clamp(_currentLine + resultInput, -1, 1);
+            _predictedHandledInput = 0;
 
-            // Заглушка, потом тык в стену будем обрабатывать через stumble (споткнуться)
-            _currentLine = Mathf.Clamp(_currentLine + horizontalInput, -1, 1);
-            StartCoroutine(SlideRoutine());
+            if (resultInput != 0)
+                StartCoroutine(SlideRoutineCurve());
         }
 
+
+        // Чекайте, могут быть мат. ошибки
+        IEnumerator SlideRoutineCurve()
+        {
+            _isSliding = true;
+
+            var destinationX = _currentLine * LineOffsetX;
+            var startPositionX = transform.position.x;
+
+            float t = 0f;
+            _curvedT = 0f;
+            while (_curvedT < 1f)
+            {
+                var predictT = Time.deltaTime * _slideSpeed;
+                var predictCurvedT = SlideCurve.Evaluate(Mathf.Clamp(t + predictT, 0f, 1f));
+
+                var deltaCurvedT = (predictCurvedT - _curvedT);
+
+                t += predictT;
+                _curvedT = predictCurvedT;
+
+                // Функцию Time.deltaTime выполняет deltaCurvedT
+                var slideSpeedByCurve = deltaCurvedT;
+                var step = (destinationX - startPositionX) * slideSpeedByCurve * Vector3.right;
+
+                _characterController.Move(step);
+                yield return null;
+            }
+
+            // Остаток погрешности нивелируем за один кадр.
+            _characterController.Move((destinationX - transform.position.x) * Vector3.right);
+            yield return null;
+
+            _isSliding = false;
+        }
+
+        IEnumerator SlideRoutineWrongCurve()
+        {
+            _isSliding = true;
+
+            var destinationX = _currentLine * LineOffsetX;
+            var startPositionX = transform.position.x;
+
+            float t = 0f;
+            float curvedT = 0f;
+            while (curvedT < 1f)
+            {
+                t += Time.deltaTime * _slideSpeed;
+
+                // Изменяем скорость анимации через время:
+                // Искажаем, проецируем реальное время на кривую.
+                // Работает только с линейной кривой.
+
+                curvedT = SlideCurve.Evaluate(t);
+
+                var slideSpeedByCurve = _slideSpeed * (1f - (t - curvedT));
+                var velocity = (destinationX - startPositionX) * slideSpeedByCurve * Vector3.right;
+                
+                _characterController.Move(velocity * Time.deltaTime);
+
+                yield return null;
+            }
+
+            // Остаток погрешности нивелируем за один кадр.
+            _characterController.Move((destinationX - transform.position.x) * Vector3.right);
+            yield return null;
+
+            _isSliding = false;
+        }
+
+
+        // Без ошибки погрешности, основаный на v = s/t, скорость слайда = множителю времени
         IEnumerator SlideRoutine()
         {
             _isSliding = true;
+
+            var destinationX = _currentLine * LineOffsetX;
+            var startPositionX = transform.position.x;
+
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.deltaTime * _slideSpeed;
+
+                var velocity = (destinationX - startPositionX) * _slideSpeed * Vector3.right;
+                _characterController.Move(velocity * Time.deltaTime);
+                
+                yield return null;
+            }
+
+            // Остаток погрешности нивелируем за один кадр.
+            _characterController.Move((destinationX - transform.position.x) * Vector3.right);
+            yield return null;
+
+            _isSliding = false;
+        }
+
+
+
+        // Старый неточный вариант, основанный на скорости
+        IEnumerator SlideRoutineOldVelocity()
+        {
+            _isSliding = true;
+
             var destinationX = _currentLine * LineOffsetX;
             _velocity.x = (destinationX - transform.position.x) * _slideSpeed;
 
-            var completePath = 0f;
-            while (completePath < LineOffsetX)
+            float t = 0f;
+            while (t <= 1f)
             {
                 yield return null;
-                completePath += Mathf.Abs(_velocity.x * Time.deltaTime);
+                t += Time.deltaTime;
+
+                _velocity.x = (destinationX - transform.position.x) * _slideSpeed;
+                Debug.Log(_velocity.x + " ; " + transform.position.x);
             }
 
+            yield return null;
+            _velocity.x = 0f;
+            
+            
+            /*
+                        var completePath = 0f;
+                        while (completePath < LineOffsetX)
+                        {
+                            yield return null;
+                            completePath += Mathf.Abs(_velocity.x * Time.deltaTime);
+                        }
+            */
             _isSliding = false;
         }
     }
