@@ -28,6 +28,7 @@ namespace Subway.Logic.Chunks
         {
             if (_collider != null)
                 UpdateColliderSize();
+
         }
 
         private void UpdateColliderSize()

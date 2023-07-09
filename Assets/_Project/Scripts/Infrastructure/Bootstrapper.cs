@@ -13,10 +13,11 @@ namespace Subway.Infrastructure
     {
         [SerializeField] private GameObject _playerPrefab;
         [SerializeField] private GameObject _chunkGenerator;
+        [SerializeField] private GameObject _hudPrefab;
 
         private void Awake()
         {
-            Game game = new Game(this, _playerPrefab, _chunkGenerator);
+            Game game = new Game(this, _playerPrefab, _chunkGenerator, _hudPrefab);
             DontDestroyOnLoad(gameObject);
         }
     }

@@ -1,8 +1,13 @@
+using Subway.Infrastructure;
+using Subway.Logic.Data;
+using Subway.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.ConstrainedExecution;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Subway.Logic.Chunks
 {
@@ -13,6 +18,7 @@ namespace Subway.Logic.Chunks
 
         [SerializeField] private Vector3 _moneyOffset;
 
+        private MoneyTextView _moneyTextView;
         private readonly List<GameObject> _spawnedCoins = new List<GameObject>();
 
         private void Start()
@@ -20,18 +26,9 @@ namespace Subway.Logic.Chunks
             
         }
         
-        public void Initialize(int count)
+        public void Initialize(MoneyTextView moneyTextView/*int count*/)
         {
-            _moneyCount = count;
-            InstantiateMoney();
-        }
-
-        private void OnValidate()
-        {
-            if (_moneyPrefab == null)
-                return;
-
-            Clear();
+            _moneyTextView = moneyTextView;
             InstantiateMoney();
         }
 
@@ -39,14 +36,31 @@ namespace Subway.Logic.Chunks
         {
             var spawnPosition = transform.position;
 
-            for (int i = 0; i < _moneyCount; i++) 
+            for (int i = 0; i < _moneyCount; i++)
             {
                 GameObject money = Instantiate(_moneyPrefab, spawnPosition, Quaternion.identity);
                 spawnPosition += _moneyOffset;
 
+                InitializeMoney(money);
+
                 _spawnedCoins.Add(money);
             }
         }
+
+        private void InitializeMoney(GameObject money)
+        {
+            Destroyable moneyDestroyable = money.GetComponent<Destroyable>();
+            TriggerEventAdapter moneyTriggerAdapter = money.GetComponent<TriggerEventAdapter>();
+
+            //UnityAction addMoney = AddMoney;
+            moneyTriggerAdapter.OnTriggerEnterEvent.AddListener(() =>
+            {
+                Game.Instance.Data.Money += 1;
+                _moneyTextView.UpdateText(Game.Instance.Data.Money.ToString());
+                moneyDestroyable.DestroyImmediately();
+            });
+        }
+
 
         private void Clear()
         {
@@ -55,5 +69,6 @@ namespace Subway.Logic.Chunks
             
             _spawnedCoins.Clear();
         }
+
     }
 }

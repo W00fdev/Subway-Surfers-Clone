@@ -1,5 +1,9 @@
-﻿using System.Collections;
-using Unity.VisualScripting;
+﻿using Subway.Infrastructure;
+using Subway.Infrastructure.Serivces.SaveLoad;
+using Subway.Logic.Data;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Subway.Logic.Player
@@ -47,7 +51,7 @@ namespace Subway.Logic.Player
      */
 
     [RequireComponent(typeof(CharacterController))]
-    public class Movement : MonoBehaviour
+    public class Movement : MonoBehaviour, ISaveLoadProgressService
     {
         [Header("Настройки передвижения")]
         [SerializeField] private float _speed;
@@ -77,6 +81,7 @@ namespace Subway.Logic.Player
         private int _predictedHandledInput;
         private const int LineOffsetX = 2;
 
+
         private void Awake()
         {
             _animator = GetComponent<Animator>();
@@ -84,6 +89,9 @@ namespace Subway.Logic.Player
 
             // Указываем вектор скорости движения, z направление не меняем.
             _velocity = transform.forward * _speed;
+
+            Debug.Log(" Hero: " + Game.Instance.Data.Money);
+
         }
 
         private void Update()
@@ -92,16 +100,24 @@ namespace Subway.Logic.Player
             if (_isAlive == false)
                 return;
 
+            ProcessESC();
+
+
             ProcessSwipe();
             ApplyGravity();
             ProcessJump();
-
 
             // Non-velocity based:
             if (_isSliding == true)
                 _velocity.x = 0f;
 
             MovePlayer();
+        }
+
+        private void ProcessESC()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+                Game.Instance.SaveLoadProgressService.SaveProgress();
         }
 
         private void MovePlayer() 
@@ -301,6 +317,30 @@ namespace Subway.Logic.Player
                         }
             */
             _isSliding = false;
+        }
+
+        IEnumerator Timer()
+        {
+            var time = 0f;
+
+            while (time < 3f) 
+            {
+                yield return new WaitForSeconds(1);
+                time ++;
+                Debug.Log("Timer " + time);
+            }
+
+            Debug.Log("Timer work end");
+        }
+
+        public void SaveProgress()
+        {
+            // Сохранять
+        }
+
+        public void LoadProgress()
+        {
+            // Загружать
         }
     }
 }
